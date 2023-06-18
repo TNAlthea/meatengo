@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router';
 import { PlusCircleIcon } from '@heroicons/vue/24/outline';
-import { setTokenExpirationTimer } from '../../auth.js';
+// import { setTokenExpirationTimer } from '../../auth.js';
 import api from '../../api';
 
 const imagePath = ref('/logo/logo-v1.png')

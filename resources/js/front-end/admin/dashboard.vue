@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
-import { setTokenExpirationTimer } from '../../auth.js';
+// import { setTokenExpirationTimer } from '../../auth.js';
 import { logout } from '../../util/authUtils';
 import api from '../../api.js';
 
@@ -12,19 +12,9 @@ import { HomeIcon as SolidHomeIcon, PlusCircleIcon as SolidPlusCircleIcon, Arrow
 
 const imagePath = ref('/logo/logo-v1.png');
 const route = useRouter();
-const store = useStore();
-const user_data = JSON.parse(sessionStorage.getItem("user_data"));
-
-const headers = {
-    Authorization: `Bearer ${user_data.authorization.token}`,
-};
-const signature = {
-    headers,
-    withCredentials: true,
-};
 
 onMounted(function async (){
-    store.dispatch('startTokenExpirationTimer');
+    // store.dispatch('startTokenExpirationTimer');
 })
 </script>
 

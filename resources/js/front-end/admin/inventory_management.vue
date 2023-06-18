@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, ref, computed, watchEffect } from 'vue';
 import { useRouter } from 'vue-router';
-import { setTokenExpirationTimer } from '../../auth.js';
+// import { setTokenExpirationTimer } from '../../auth.js';
 import api from '../../api.js';
 
 /* Hero Icons */
@@ -44,22 +44,12 @@ const signature = {
 onMounted(async () => {
     await getAllInventory();
     clearFilterByCategory();
-    setTokenExpirationTimer(() => logout(route, 'admin', signature)); 
 })
 
 /* API calls */
 const logout = async () => {
     try {
-        const headers = {
-            'Authorization': `Bearer ${user_data.authorization.token}`,
-        };
-
-        const options = {
-            headers,
-            withCredentials: true,
-        };
-
-        const response = await api.post('api/admin/logout', null, options);
+        const response = await api.post('api/admin/logout', null, signature);
 
         sessionStorage.removeItem("user_data");
         route.push({ path: '/admin/login' });
@@ -71,7 +61,7 @@ const logout = async () => {
 
 const getAllInventory = async () => {
     try {
-        const response = await api.get('api/inventory/getAll');
+        const response = await api.get('api/inventory/getAll', signature);
         inventory.value = response.data.data;
 
         inventory.value.forEach((item) => {
@@ -91,7 +81,7 @@ const deleteProduct = async (product) => {
         const confirmation = confirm(`Apakah anda yakin untuk menghapus produk ini (${product.name})?`);
 
         if (confirmation) {
-            const response = await api.post(`api/inventory/delete/${product.id}`);
+            const response = await api.post(`api/inventory/delete/${product.id}`, null, signature);
             alert(`${product.name} sukses dihapus dari database!`);
             location.reload()
         }
@@ -111,11 +101,11 @@ const updateProduct = async (product) => {
 
         delete uploadData.value.image;
 
-        const response = await api.post(`api/inventory/update/${uploadData.value.id}`, uploadData.value);
+        const response = await api.post(`api/inventory/update/${uploadData.value.id}`, uploadData.value, signature);
         alert(`${uploadData.value.name} berhasil diupdate!`);
 
         //update the selectedItem after updates
-        const updatedProduct = await api.get(`api/inventory/get/${uploadData.value.id}`);
+        const updatedProduct = await api.get(`api/inventory/get/${uploadData.value.id}`, signature);
         selectedItem.value = updatedProduct.data.data;
 
         isEditing.value = false;

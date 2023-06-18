@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
+import store from '../../util/store.js';
 import api from '../../api.js';
 
 const imagePath = ref('/logo/logo-v1.png');
@@ -18,10 +18,24 @@ let errorMessage = ref("");
 const login = async () => {
     try {
         wrongCredentials.value = false;
-        const response = await api.post('/api/admin/login', form);
-        route.push({ path: '/admin/dashboard' });
 
+        const response = await api.post('/api/admin/login', form);
+        
         sessionStorage.setItem("user_data", JSON.stringify(response.data));
+        const user_data = JSON.parse(sessionStorage.getItem("user_data"));
+        const headers = {
+            Authorization: `Bearer ${user_data.authorization.token}`,
+        };
+        const signature = {
+            headers,
+            withCredentials: true,
+        };
+        
+        store.commit('setSignature', signature)
+        store.commit('setEntity', 'admin')
+        store.commit('setRoute', route)
+        
+        route.push({ path: '/admin/dashboard' });
     } catch (error) {
         wrongCredentials.value = true;
         errorMessage.value = 'An error occurred while logging in. Please try again later.';

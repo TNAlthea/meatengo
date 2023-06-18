@@ -1,38 +1,61 @@
-// store.js
+import { createStore } from "vuex";
+import { logout } from "./authUtils";
 
-import { createStore } from 'vuex';
+let logoutTimeout = null;
+let intervalTime = null;
 
 const store = createStore({
-  state: {
-    tokenExpirationTimer: null,
-  },
-  mutations: {
-    setTokenExpirationTimer(state, timer) {
-      state.tokenExpirationTimer = timer;
+    state: {
+        signature: null,
+        entity: null,
+        route: null,
     },
-    clearTokenExpirationTimer(state) {
-      if (state.tokenExpirationTimer) {
-        clearTimeout(state.tokenExpirationTimer);
-        state.tokenExpirationTimer = null;
-      }
+    mutations: {
+        setSignature(state, signature) {
+            state.signature = signature;
+        },
+        clearSignature(state) {
+            state.signature = null;
+        },
+        setEntity(state, entity) {
+            state.entity = entity;
+        },
+        clearEntity(state) {
+            state.entity = null;
+        },
+        setRoute(state, route) {
+            state.route = route;
+        },
+        clearRoute(state) {
+            state.route = null;
+        },
     },
-  },
-  actions: {
-    startTokenExpirationTimer({ commit, dispatch }) {
-      const timer = setTimeout(() => {
-        dispatch('logout');
-        alert("Token expired, please login again.");
-      }, 30000); // Adjust the timeout value as needed
-      
-      commit('setTokenExpirationTimer', timer);
+    actions: {
+        startTokenExpirationTimer({ commit, dispatch, state }) {
+            if (logoutTimeout) {
+                clearTimeout(logoutTimeout);
+                clearInterval(intervalTime);
+            }
+
+            logoutTimeout = setTimeout(() => {
+                logout(state.entity, state.signature, state.route);
+                dispatch('clearTokenExpirationTimer');
+                alert("Token expired, please login again.");
+                
+                commit('clearSignature'); commit('clearEntity'); commit('clearRoute');
+            }, 10000);
+
+            intervalTime = setInterval(() => {
+                console.log("pls berhasil");
+            }, 1000);
+        },
+        clearTokenExpirationTimer({}) {
+            if (logoutTimeout) {
+                clearTimeout(logoutTimeout);
+                clearInterval(intervalTime);
+            }
+        },
     },
-    clearTokenExpirationTimer({ commit }) {
-      commit('clearTokenExpirationTimer');
-    },
-    logout({ /* access necessary parameters */ }) {
-      // Perform logout logic
-    },
-  },
 });
 
 export default store;

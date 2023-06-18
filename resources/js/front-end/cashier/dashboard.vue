@@ -6,7 +6,7 @@ import {
     ArrowRightOnRectangleIcon,
     XCircleIcon,
 } from "@heroicons/vue/24/outline";
-import { setTokenExpirationTimer } from "../../auth.js";
+// import { setTokenExpirationTimer } from "../../auth.js";
 
 import { getAllInventory, getAllMember } from "../../util/getData.js";
 import { logout } from "../../util/authUtils.js"

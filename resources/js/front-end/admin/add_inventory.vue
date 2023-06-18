@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { setTokenExpirationTimer } from '../../auth.js';
+// import { setTokenExpirationTimer } from '../../auth.js';
 
 import api from '../../api.js';
 import { logout } from '../../util/authUtils';
@@ -42,7 +42,7 @@ const signature = {
 };
 
 onMounted(function async (){
-    setTokenExpirationTimer(() => logout(route, 'admin', signature));    
+    // setTokenExpirationTimer(() => logout(route, 'admin', signature));    
 })
 
 
@@ -68,7 +68,7 @@ const submitInventory = async () => {
         formData.append('category', form.category);
         formData.append('image', form.image);
 
-        const response = await api.post('/api/inventory/add_inventory', signature, formData);
+        const response = await api.post('/api/inventory/add_inventory', formData, signature);
         route.push({ path: '/admin/dashboard' });
 
         alert(`Produk ${form.name} sukses ditambahkan ke dalam database!`);
