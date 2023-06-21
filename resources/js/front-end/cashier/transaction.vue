@@ -2,13 +2,25 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router';
 import { PlusCircleIcon } from '@heroicons/vue/24/outline';
-// import { setTokenExpirationTimer } from '../../auth.js';
 import api from '../../api';
+import store from '../../util/store.js';
+import { logout } from '../../util/authUtils.js';
 
 const imagePath = ref('/logo/logo-v1.png')
 const user_data = JSON.parse(sessionStorage.getItem("user_data"));
 const route = useRouter();
 
+/* token credentials */
+const headers = {
+    Authorization: `Bearer ${user_data.authorization.token}`,
+};
+const signature = {
+    headers,
+    withCredentials: true,
+};
+const tokenExpiry = store.getters.getLoginTime + 6 * 60 * 60 * 1000; //expiration time of token is 6 hours from login
+
+/* other var */
 let inventory = ref([]);
 let categories = ref([]);
 
@@ -20,38 +32,21 @@ onMounted(async () => {
 /* API Calls */
 const getAllInventory = async () => {
     try {
-        const response = await api.get('api/inventory/getAll');
-        inventory.value = response.data.data;
-
-        inventory.value.forEach((item) => {
-            if (!categories.value.includes(item.category)) {
-                categories.value.push(item.category);
-            }
-        });
+        if (Date.now() < tokenExpiry) {
+            const response = await api.get('api/inventory/getAll', signature);
+            inventory.value = response.data.data;
+    
+            inventory.value.forEach((item) => {
+                if (!categories.value.includes(item.category)) {
+                    categories.value.push(item.category);
+                }
+            });
+        }        
     } catch (error) {
         alert(`Error terjadi ketika memuat inventori produk, alasan: ${error}`);
         console.error(error);
     }
 };
-
-const logout = async () => {
-    try {
-        const headers = {
-            'Authorization': `Bearer ${user_data.authorization.token}`,
-        };
-        const options = {
-            headers,
-            withCredentials: true,
-        };
-
-        const response = await api.post('api/cashier/logout', null, options);
-        sessionStorage.removeItem("user_data");
-        route.push({ path: '/cashier/login' });
-    } catch (error) {
-        alert(error);
-        console.error(error);
-    }
-}
 
 /* views formatting */
 const formatPrice = (price) => {

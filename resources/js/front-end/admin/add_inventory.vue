@@ -1,8 +1,7 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-// import { setTokenExpirationTimer } from '../../auth.js';
-
+import store from '../../util/store.js';
 import api from '../../api.js';
 import { logout } from '../../util/authUtils';
 
@@ -14,6 +13,8 @@ const imagePath = ref('/logo/logo-v1.png');
 const route = useRouter();
 const previewImageUpload = ref('');
 const user_data = JSON.parse(sessionStorage.getItem("user_data"));
+const tokenExpiry = store.getters.getLoginTime + 6 * 60 * 60 * 1000; //expiration time of token is 6 hours from login
+
 const categoriesOption = [
     { name: 'Buah dan Sayur', value: 'buah dan sayur' },
     { name: 'Daging dan Seafood', value: 'daging dan seafood' },
@@ -41,11 +42,36 @@ const signature = {
     withCredentials: true,
 };
 
-onMounted(function async (){
-    // setTokenExpirationTimer(() => logout(route, 'admin', signature));    
+onMounted(function async() {
 })
 
+/* API calls */
+const submitInventory = async () => {
+    try {
+        if (Date.now() < tokenExpiry) {
+            const formData = new FormData();
+            formData.append('name', form.name);
+            formData.append('price', form.price);
+            formData.append('stock', form.stock);
+            formData.append('category', form.category);
+            formData.append('image', form.image);
 
+            const response = await api.post('/api/inventory/add_inventory', formData, signature);
+            console.log(response.data.data.id)
+            route.push({ path: '/admin/dashboard' });
+
+            alert(`Produk ${form.name} sukses ditambahkan ke dalam database!`);
+            location.reload();
+        } else {
+            route.push({ path: '/admin/login' });
+            alert("Token expired, please login again.");
+        }
+    } catch (error) {
+        alert(`gagal menambahkan produk ke dalam inventory, alasan: ${error}`);
+    }
+};
+
+/* Views Formatting */
 function previewImage(event) {
     form.image = event.target.files[0];
     const reader = new FileReader();
@@ -58,25 +84,6 @@ function previewImage(event) {
         reader.readAsDataURL(form.image);
     }
 }
-
-const submitInventory = async () => {
-    try {
-        const formData = new FormData();
-        formData.append('name', form.name);
-        formData.append('price', form.price);
-        formData.append('stock', form.stock);
-        formData.append('category', form.category);
-        formData.append('image', form.image);
-
-        const response = await api.post('/api/inventory/add_inventory', formData, signature);
-        route.push({ path: '/admin/dashboard' });
-
-        alert(`Produk ${form.name} sukses ditambahkan ke dalam database!`);
-        location.reload();
-    } catch (error) {
-        alert(`gagal menambahkan produk ke dalam inventory, alasan: ${error}`);
-    }
-};
 </script>
 
 <template>
@@ -108,7 +115,8 @@ const submitInventory = async () => {
                     <span
                         class="flex flex-row gap-5 py-3 px-5 items-center group hover:bg-red-500 hover:rounded-full hover:!text-white">
                         <ArrowRightOnRectangleIcon class="h-6 w-6 text-red-500 group-hover:text-white" />
-                        <a href="#" @click="logout(route, 'admin', signature)" class="pb-1 text-red-500 group-hover:text-white">Logout</a>
+                        <a href="#" @click="logout('admin', signature, route)"
+                            class="pb-1 text-red-500 group-hover:text-white">Logout</a>
                     </span>
                 </nav>
             </div>
@@ -140,7 +148,7 @@ const submitInventory = async () => {
                     <span class="flex flex-row gap-5 py-5 text-2xl">
                         <label class="w-40">Kategori</label>
                         <select class="border rounded-lg bg-white grow py-1 px-3" v-model="form.category" required>
-                            <option class="bg-white" v-for="category in categoriesOption" :value="category.name" >
+                            <option class="bg-white" v-for="category in categoriesOption" :value="category.name">
                                 {{ category.name }}
                             </option>
                         </select>
@@ -148,7 +156,7 @@ const submitInventory = async () => {
                     <span class="grid grid-cols-2 gap-5 py-5 text-xl">
                         <span class="flex flex-col gap-3">
                             <label class="w-40">Foto Produk</label>
-                            <input type="file" ref="fileInput" @change="previewImage" required/>
+                            <input type="file" ref="fileInput" @change="previewImage" required />
                         </span>
                         <img v-if="previewImageUpload" class="bg-red-500 w-72 h-72 object-cover" :src="previewImageUpload"
                             alt="Preview" />

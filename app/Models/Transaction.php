@@ -8,13 +8,23 @@ use Illuminate\Database\Eloquent\Model;
 class Transaction extends Model
 {
     use HasFactory;
-
+    public $timestamps = false;
+    
     protected $fillable = [
         'user_id',
         'cashier_id',
-        'sold_at',
-        'total_amount',
-        // Add any additional fillable columns for the Transaction entity
+        'total_before_discount',
+        'discount',
+        'total'
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'sold_at' => 'datetime',
     ];
 
     public function user()

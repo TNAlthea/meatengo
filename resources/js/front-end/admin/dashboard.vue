@@ -1,9 +1,9 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useStore } from 'vuex';
 // import { setTokenExpirationTimer } from '../../auth.js';
-import { logout } from '../../util/authUtils';
+import { logout } from '../../util/authUtils.js';
+import store from '../../util/store.js';
 import api from '../../api.js';
 
 /* Hero Icons */
@@ -12,9 +12,18 @@ import { HomeIcon as SolidHomeIcon, PlusCircleIcon as SolidPlusCircleIcon, Arrow
 
 const imagePath = ref('/logo/logo-v1.png');
 const route = useRouter();
+const user_data = JSON.parse(sessionStorage.getItem("user_data"));
+const headers = {
+    Authorization: `Bearer ${user_data.authorization.token}`,
+};
+const signature = {
+    headers,
+    withCredentials: true,
+};
+const tokenExpiry = store.getters.getLoginTime + 6 * 60 * 60 * 1000; //expiration time of token is 6 hours from login
+
 
 onMounted(function async (){
-    // store.dispatch('startTokenExpirationTimer');
 })
 </script>
 
@@ -41,7 +50,7 @@ onMounted(function async (){
                     </span>
                     <span class="flex flex-row gap-5 py-3 px-5 items-center group hover:bg-red-500 hover:rounded-full hover:!text-white">
                         <ArrowRightOnRectangleIcon class="h-6 w-6 text-red-500 group-hover:text-white" />
-                        <a href="#" @click="logout(route, 'admin', signature)" class="pb-1 text-red-500 group-hover:text-white">Logout</a>
+                        <a href="#" @click="logout('admin', signature, route)" class="pb-1 text-red-500 group-hover:text-white">Logout</a>
                     </span>
                 </nav>
             </div>

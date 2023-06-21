@@ -6,10 +6,11 @@ import {
     ArrowRightOnRectangleIcon,
     XCircleIcon,
 } from "@heroicons/vue/24/outline";
-// import { setTokenExpirationTimer } from "../../auth.js";
 
 import { getAllInventory, getAllMember } from "../../util/getData.js";
+import store from "../../util/store.js";
 import { logout } from "../../util/authUtils.js"
+import api from "../../api";
 
 const imagePath = ref("/logo/logo-v1.png");
 const user_data = JSON.parse(sessionStorage.getItem("user_data"));
@@ -20,7 +21,10 @@ let categories = ref([]);
 let selectedProducts = ref([]);
 
 let members = [];
-let selectedMember = ref('');
+let selectedMember = ref({
+    id: 'f9a24e23-580a-4b65-8e8a-86d4639e1fb3',
+    name: '',
+});
 let filteredMembers = ref([]);
 let searchQuery = ref('');
 
@@ -30,7 +34,16 @@ let discount = ref(0);
 
 let isShowingMemberModal = ref(false);
 
-let transactionData = [];
+/* object to store data that will be send into database through API */
+let transactionData = {
+    total_before_discount: 0,
+    discount: 0,
+    total: 0,
+    user_id: 'f9a24e23-580a-4b65-8e8a-86d4639e1fb3',
+    cashier_id: user_data.data.id,
+};
+
+let transactionProductData = [];
 
 /* token credentials */
 const headers = {
@@ -40,6 +53,7 @@ const signature = {
     headers,
     withCredentials: true,
 };
+const tokenExpiry = store.getters.getLoginTime + 6 * 60 * 60 * 1000; //expiration time of token is 6 hours from login
 
 /* on mount */
 onMounted(async () => {
@@ -47,28 +61,51 @@ onMounted(async () => {
     members = await getAllMember('cashier', signature);
     detectCategories();
     memberSearch(); //store all members into filteredMembers array
-    setTokenExpirationTimer(logout);
 });
 
 /* API Calls */
 const submitTransaction = async () => {
-    try {
-        const headers = {
-            Authorization: `Bearer ${user_data.authorization.token}`,
-        };
-        const options = {
-            headers,
-            withCredentials: true,
-        };
+    if (selectedProducts.value.length > 0) {
+        try {
+            if (Date.now() < tokenExpiry) {
+                /* storing into transaction table */
+                transactionData.total_before_discount = subTotal.value;
+                transactionData.discount = discount.value;
+                transactionData.total = total.value;
 
-        const response_to_transaction = await api.post("api/transaction/add_transaction", options);
+                console.log(transactionData);
 
-    } catch (error) {
-        alert(`Error terjadi ketika menambah transaksi, alasan: ${error}`);
-        console.error(error);
+                const response_to_transaction = await api.post("api/transaction/add_transaction", transactionData, signature);
+
+                /* storing into transaction_products */
+                /* copy selected columns (id and quantity) of selectedProducts into transactionProductData */
+                transactionProductData = selectedProducts.value.map((product) => ({
+                    quantity: product.quantity,
+                    transaction_id: response_to_transaction.data.data.id,
+                    inventory_id: product.id,
+                }));
+
+                console.table(transactionProductData);
+                for (const data of transactionProductData) {
+                    await api.post("api/transaction/add_transaction_product", data, signature);
+                }
+
+                alert("Transaksi sukses!");
+                location.reload();
+            } else {
+                route.push({ path: '/cashier/login' });
+                alert("Token expired, please login again.");
+            }
+        } catch (error) {
+            alert(`Error terjadi ketika menambah transaksi ${error}`);
+        }
+    } else {
+        alert('Keranjang kosong! Harap isi keranjang terlebih dahulu sebelum melakukan transaksi.')
     }
 }
 
+
+/* views formatting */
 const detectCategories = () => {
     inventory.value.forEach((item) => {
         if (!categories.value.includes(item.category)) {
@@ -76,7 +113,7 @@ const detectCategories = () => {
         }
     });
 }
-/* views formatting */
+
 const formatPrice = (price) => {
     return "Rp " + price.toLocaleString("id-ID");
 };
@@ -106,13 +143,13 @@ const addItem = (item) => {
             (selectedProducts) => selectedProducts.id === item.id
         )
     ) {
-        item.Qty = 1;
+        item.quantity = 1;
         selectedProducts.value.push(item);
     }
 };
 
 const calculateItemsSubTotal = (item) => {
-    item.subTotal = item.price * item.Qty;
+    item.subTotal = item.price * item.quantity;
 };
 
 const calculateAllSubTotal = () => {
@@ -145,8 +182,9 @@ const memberSearch = () => {
     });
 };
 
-const selectMember = (memberName) => {
-    selectedMember.value = memberName;
+const selectMember = (member) => {
+    selectedMember.id = member.id;
+    selectedMember.name = member.name;
     console.log(selectedMember.value);
 }
 </script>
@@ -165,7 +203,7 @@ const selectMember = (memberName) => {
                     <a>Home</a>
                     <a>Products</a>
                     <a>Stores</a>
-                    <button @click="logout(route, 'cashier', signature)"
+                    <button @click="logout('cashier', signature, route)"
                         class="border-2 border-red-500 text-red-500 rounded-lg flex flex-row gap-1 items-center justify-center px-3 py-2 group hover:bg-red-500 hover:text-white hover:font-semibold">
                         <ArrowRightOnRectangleIcon class="w-6 h-6" />
                         <p>Logout</p>
@@ -218,7 +256,7 @@ const selectMember = (memberName) => {
                                         {{ formatPrice(product.price) }}
                                     </td>
                                     <td class="text-center pb-2">
-                                        <input type="number" v-model="product.Qty" :min="0"
+                                        <input type="number" v-model="product.quantity" :min="0"
                                             class="border focus:border-blue-500 text-center p-1 min-w-[40%] max-w-[40%]"
                                             @input="
                                                 calculateItemsSubTotal(product);
@@ -271,7 +309,7 @@ const selectMember = (memberName) => {
                             </span>
                             <div v-for="member in filteredMembers" :key="member.id"
                                 class="flex flex-row w-full justify-center items-center">
-                                <span @click="selectMember(member.name)" class="bg-blue-500 px-5 py-2 cursor-pointer">
+                                <span @click="selectMember(member)" class="bg-blue-500 px-5 py-2 cursor-pointer">
                                     {{ member.name }}
                                 </span>
                             </div>

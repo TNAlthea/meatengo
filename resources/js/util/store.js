@@ -2,60 +2,82 @@ import { createStore } from "vuex";
 import { logout } from "./authUtils";
 
 let logoutTimeout = null;
-let intervalTime = null;
+
+// Get the initial state from local storage if available
+const storedState = localStorage.getItem("storeState");
+const initialState = storedState
+    ? JSON.parse(storedState)
+    : {
+          signature: null,
+          entity: null,
+          route: null,
+          loginTime: null,
+      };
 
 const store = createStore({
     state: {
-        signature: null,
-        entity: null,
-        route: null,
+        signature: initialState.signature,
+        entity: initialState.entity,
+        route: initialState.route,
+        loginTime: initialState.loginTime,
     },
     mutations: {
         setSignature(state, signature) {
             state.signature = signature;
-        },
-        clearSignature(state) {
-            state.signature = null;
+            persistState(state);
         },
         setEntity(state, entity) {
             state.entity = entity;
-        },
-        clearEntity(state) {
-            state.entity = null;
+            persistState(state);
         },
         setRoute(state, route) {
             state.route = route;
+            persistState(state);
         },
-        clearRoute(state) {
+        setLoginTime(state, time) {
+            state.loginTime = time;
+            persistState(state);
+        },
+        clearAllState(state) {
+            state.signature = null;
+            state.entity = null;
             state.route = null;
+            state.loginTime = null;
+            persistState(state);
+        },
+    },
+    getters: {
+        getLoginTime(state) {
+            return state.loginTime;
         },
     },
     actions: {
         startTokenExpirationTimer({ commit, dispatch, state }) {
             if (logoutTimeout) {
                 clearTimeout(logoutTimeout);
-                clearInterval(intervalTime);
             }
+
+            const timeout = 6 * 60 * 60 * 1000;
 
             logoutTimeout = setTimeout(() => {
                 logout(state.entity, state.signature, state.route);
-                dispatch('clearTokenExpirationTimer');
-                alert("Token expired, please login again.");
-                
-                commit('clearSignature'); commit('clearEntity'); commit('clearRoute');
-            }, 10000);
+                dispatch("clearTokenExpirationTimer");
+                alert("Inactivity detected, please login again.");
 
-            intervalTime = setInterval(() => {
-                console.log("pls berhasil");
-            }, 1000);
+                commit("clearAllState");
+            }, timeout);
         },
-        clearTokenExpirationTimer({}) {
+        clearTokenExpirationTimer({ commit }) {
             if (logoutTimeout) {
                 clearTimeout(logoutTimeout);
-                clearInterval(intervalTime);
             }
+            commit("clearAllState");
         },
     },
 });
+
+function persistState(state) {
+    localStorage.setItem("storeState", JSON.stringify(state));
+}
 
 export default store;

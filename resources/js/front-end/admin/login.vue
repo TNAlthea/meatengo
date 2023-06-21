@@ -20,7 +20,7 @@ const login = async () => {
         wrongCredentials.value = false;
 
         const response = await api.post('/api/admin/login', form);
-        
+
         sessionStorage.setItem("user_data", JSON.stringify(response.data));
         const user_data = JSON.parse(sessionStorage.getItem("user_data"));
         const headers = {
@@ -30,11 +30,16 @@ const login = async () => {
             headers,
             withCredentials: true,
         };
-        
-        store.commit('setSignature', signature)
-        store.commit('setEntity', 'admin')
-        store.commit('setRoute', route)
-        
+
+        store.commit('setSignature', signature);
+        store.commit('setEntity', 'admin');
+        store.commit('setRoute', route);
+        store.commit('setLoginTime', Date.now());
+
+        // store data into localstorage so store's state can be restored in case of page refresh
+        const state = store.state;
+        localStorage.setItem('storeState', JSON.stringify(state));
+
         route.push({ path: '/admin/dashboard' });
     } catch (error) {
         wrongCredentials.value = true;

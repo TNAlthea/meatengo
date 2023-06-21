@@ -14,8 +14,9 @@ return new class extends Migration
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
             $table->timestamp('sold_at');
-            $table->decimal('total_amount');
-        
+            $table->decimal('total_before_discount');
+            $table->integer('discount');
+            $table->decimal('total');
             $table->foreignUuid('user_id')->nullable()->references('id')->on('users')->nullOnDelete();
             $table->foreignUuid('cashier_id')->nullable()->references('id')->on('cashiers')->nullOnDelete();
         });        

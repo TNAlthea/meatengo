@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import api from '../../api.js';
+import store from '../../util/store.js';
 
 const imagePath = ref('/logo/logo-v1.png');
 const route = useRouter();
@@ -18,19 +19,36 @@ let errorMessage = ref("");
 const login = async () => {
     try {
         wrongCredentials.value = false;
+
         const response = await api.post('/api/cashier/login', form);
-        route.push({ path: '/cashier/dashboard' });
-
+        
         sessionStorage.setItem("user_data", JSON.stringify(response.data));
+        const user_data = JSON.parse(sessionStorage.getItem("user_data"));
+        const headers = {
+            Authorization: `Bearer ${user_data.authorization.token}`,
+        };
+        const signature = {
+            headers,
+            withCredentials: true,
+        };
+        
+        store.commit('setSignature', signature);
+        store.commit('setEntity', 'cashier');
+        store.commit('setRoute', route);
+        store.commit('setLoginTime', Date.now());
 
-        const data = JSON.parse(sessionStorage.getItem("user_data"));
+        // store data into localstorage so store's state can be restored in case of page refresh
+        const state = store.state;
+        localStorage.setItem('storeState', JSON.stringify(state));
 
+        route.push({ path: '/cashier/dashboard' });
     } catch (error) {
         wrongCredentials.value = true;
         errorMessage.value = 'An error occurred while logging in. Please try again later.';
         if (error.response && error.response.status === 401) {
             errorMessage.value = 'Invalid email or password.';
         }
+        console.error(error)
     }
 };
 

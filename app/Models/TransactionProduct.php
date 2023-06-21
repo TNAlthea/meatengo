@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class TransactionProduct extends Model
 {
     use HasFactory;
-
+    public $timestamps = false;
+    
     protected $fillable = [
         'transaction_id',
         'inventory_id',

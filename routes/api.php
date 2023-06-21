@@ -6,6 +6,8 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\AdminAuthController;
 use App\Http\Controllers\Auth\CashierAuthController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\TransactionProductController;
 use App\Http\Controllers\UserManagementController;
 
 /*
@@ -59,3 +61,10 @@ Route::controller(UserManagementController::class)->group(function (){
     Route::get('user_management/get_as_cashier', 'get_as_cashier');
 });
 
+Route::controller(TransactionController::class)->group(function (){
+    Route::post('transaction/add_transaction', 'add_transaction');
+});
+
+Route::controller(TransactionProductController::class)->group(function (){
+    Route::post('transaction/add_transaction_product', 'add_transaction_product');
+});

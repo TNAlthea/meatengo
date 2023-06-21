@@ -4,62 +4,52 @@ namespace App\Http\Controllers;
 
 use App\Models\TransactionProduct;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Exception;
 
 class TransactionProductController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function __construct()
     {
-        //
+        $this->middleware('auth:cashiers');
     }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function add_transaction_product(Request $request)
     {
-        //
-    }
+        try {
+            $request->validate([
+                'quantity' => 'required|numeric',
+                'transaction_id' => 'required|numeric',
+                'inventory_id' => 'required|numeric',
+            ]);
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
+            DB::beginTransaction();
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(TransactionProduct $transactionProduct)
-    {
-        //
-    }
+            $transactionProduct = TransactionProduct::create(
+                [
+                    'quantity' => $request->quantity,
+                    'transaction_id' => $request->transaction_id,
+                    'inventory_id' => $request->inventory_id
+                ]
+            );
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(TransactionProduct $transactionProduct)
-    {
-        //
-    }
+            DB::commit();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, TransactionProduct $transactionProduct)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(TransactionProduct $transactionProduct)
-    {
-        //
+            return response()->json([
+                'message' => 'Transaction created successfully',
+                'data' => $transactionProduct
+            ], 200);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Create new transaction product failed',
+                'reason' => $e->errors(),
+            ], 422);
+        } catch (Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'message' => 'Create new transaction product failed',
+                'reason' => $e->getMessage(),
+            ], 500);
+        }
     }
 }

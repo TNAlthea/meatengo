@@ -10,21 +10,30 @@ use Exception;
 
 class TransactionController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:cashiers');
+    }
+
     public function add_transaction(Request $request)
     {
         try {
             $request->validate([
-                'user_id' => 'numeric',
-                'cashier_id' => 'required|numeric',
-                'total_amount' => 'required|numeric',
+                'user_id' => 'required|string',
+                'cashier_id' => 'required|string',
+                'total_before_discount' => 'required|numeric',
+                'discount' => 'required|numeric',
+                'total' => 'required|numeric',
             ]);
 
             DB::beginTransaction();
 
             $transaction = Transaction::create([
-                'user_id' => $request->user_id,
-                'cashier_id' => $request->cashier_id || 1,
-                'total_amount' => $request->total_amount,
+                'user_id' => 'f9a24e23-580a-4b65-8e8a-86d4639e1fb3',
+                'cashier_id' => $request->cashier_id,
+                'total_before_discount' => $request->total_before_discount,
+                'discount' => $request->discount,
+                'total' => $request->total
             ]);
 
             DB::commit();

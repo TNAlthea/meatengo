@@ -1,9 +1,10 @@
 <script setup>
 import { onMounted, ref, computed, watchEffect } from 'vue';
 import { useRouter } from 'vue-router';
-// import { setTokenExpirationTimer } from '../../auth.js';
+import store from '../../util/store.js';
 import api from '../../api.js';
 
+import { logout } from '../../util/authUtils.js';
 /* Hero Icons */
 import { HomeIcon, PlusCircleIcon, ArrowRightOnRectangleIcon, RectangleStackIcon, XCircleIcon, ArrowsUpDownIcon } from '@heroicons/vue/24/outline';
 import { HomeIcon as SolidHomeIcon, PlusCircleIcon as SolidPlusCircleIcon, ArrowRightOnRectangleIcon as SolidArrowRightOnRectangleIcon, RectangleStackIcon as SolidRectangleStackIcon } from '@heroicons/vue/24/solid';
@@ -11,6 +12,7 @@ import { HomeIcon as SolidHomeIcon, PlusCircleIcon as SolidPlusCircleIcon, Arrow
 const imagePath = ref('/logo/logo-v1.png');
 const route = useRouter();
 const user_data = JSON.parse(sessionStorage.getItem("user_data"));
+const tokenExpiry = store.getters.getLoginTime + 6 * 60 * 60 * 1000; 
 
 let inventory = ref([]);
 let filteredInventory = ref([]);
@@ -47,28 +49,21 @@ onMounted(async () => {
 })
 
 /* API calls */
-const logout = async () => {
-    try {
-        const response = await api.post('api/admin/logout', null, signature);
-
-        sessionStorage.removeItem("user_data");
-        route.push({ path: '/admin/login' });
-    } catch (error) {
-        alert(error);
-        console.error(error);
-    }
-}
-
 const getAllInventory = async () => {
     try {
-        const response = await api.get('api/inventory/getAll', signature);
-        inventory.value = response.data.data;
+        if (Date.now() < tokenExpiry) {
+            const response = await api.get('api/inventory/getAll', signature);
+            inventory.value = response.data.data;
 
-        inventory.value.forEach((item) => {
-            if (!categories.value.includes(item.category)) {
-                categories.value.push(item.category);
-            }
-        });
+            inventory.value.forEach((item) => {
+                if (!categories.value.includes(item.category)) {
+                    categories.value.push(item.category);
+                }
+            });
+        } else {
+            route.push({ path: '/admin/login' });
+            alert("Token expired, please login again.");
+        }
     } catch (error) {
         alert(`Error terjadi ketika memuat inventori produk, alasan: ${error}`);
         console.error(error);
@@ -78,14 +73,18 @@ const getAllInventory = async () => {
 
 const deleteProduct = async (product) => {
     try {
-        const confirmation = confirm(`Apakah anda yakin untuk menghapus produk ini (${product.name})?`);
+        if (Date.now() < tokenExpiry) {
+            const confirmation = confirm(`Apakah anda yakin untuk menghapus produk ini (${product.name})?`);
 
-        if (confirmation) {
-            const response = await api.post(`api/inventory/delete/${product.id}`, null, signature);
-            alert(`${product.name} sukses dihapus dari database!`);
-            location.reload()
+            if (confirmation) {
+                const response = await api.post(`api/inventory/delete/${product.id}`, null, signature);
+                alert(`${product.name} sukses dihapus dari database!`);
+                location.reload()
+            }
+        } else {
+            route.push({ path: '/admin/login' });
+            alert("Token expired, please login again.");
         }
-
     } catch (error) {
         alert(`Error terjadi ketika menghapus ${product.name}, alasan: ${error}`);
         console.error(error);
@@ -95,20 +94,25 @@ const deleteProduct = async (product) => {
 
 const updateProduct = async (product) => {
     try {
-        const uploadData = ref([]);
+        if (Date.now() < tokenExpiry) {
+            const uploadData = ref([]);
 
-        uploadData.value = JSON.parse(JSON.stringify(product));
+            uploadData.value = JSON.parse(JSON.stringify(product));
 
-        delete uploadData.value.image;
+            delete uploadData.value.image;
 
-        const response = await api.post(`api/inventory/update/${uploadData.value.id}`, uploadData.value, signature);
-        alert(`${uploadData.value.name} berhasil diupdate!`);
+            const response = await api.post(`api/inventory/update/${uploadData.value.id}`, uploadData.value, signature);
+            alert(`${uploadData.value.name} berhasil diupdate!`);
 
-        //update the selectedItem after updates
-        const updatedProduct = await api.get(`api/inventory/get/${uploadData.value.id}`, signature);
-        selectedItem.value = updatedProduct.data.data;
+            //update the selectedItem after updates
+            const updatedProduct = await api.get(`api/inventory/get/${uploadData.value.id}`, signature);
+            selectedItem.value = updatedProduct.data.data;
 
-        isEditing.value = false;
+            isEditing.value = false;
+        } else {
+            route.push({ path: '/admin/login' });
+            alert("Token expired, please login again.");
+        }
     } catch (error) {
         alert(`[${error}] Error terjadi ketika sedang mengupdate ${product.name}`);
         console.error(error);
@@ -217,7 +221,8 @@ const getSortIconClass = (key) => {
                     <span
                         class="flex flex-row gap-5 py-3 px-5 items-center group hover:bg-red-500 hover:rounded-full hover:!text-white">
                         <ArrowRightOnRectangleIcon class="h-6 w-6 text-red-500 group-hover:text-white" />
-                        <a href="#" @click="logout(route, 'admin', signature)" class="pb-1 text-red-500 group-hover:text-white">Logout</a>
+                        <a href="#" @click="logout('admin', signature, route)"
+                            class="pb-1 text-red-500 group-hover:text-white">Logout</a>
                     </span>
                 </nav>
             </div>
