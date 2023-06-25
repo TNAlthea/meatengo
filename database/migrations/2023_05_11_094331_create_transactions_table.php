@@ -17,6 +17,8 @@ return new class extends Migration
             $table->decimal('total_before_discount');
             $table->integer('discount');
             $table->decimal('total');
+            $table->integer('plastic_bag');
+            $table->string('payment_method');
             $table->foreignUuid('user_id')->nullable()->references('id')->on('users')->nullOnDelete();
             $table->foreignUuid('cashier_id')->nullable()->references('id')->on('cashiers')->nullOnDelete();
         });        

@@ -103,22 +103,29 @@ class InventoryController extends Controller
         }
     }
 
-    public function deduct_stock($product_id, $quantity)
+    // this deduct stock and also add sold amount
+    public function deduct_stock($product_id, Request $request)
     {
         try {
+            $request->validate([
+                'quantity' => 'required|numeric',
+            ]);
+
             DB::beginTransaction();
 
             $inventory = Inventory::findOrFail($product_id);
 
             // Check if the requested quantity is available in stock
-            if ($inventory->stock >= $quantity) {
+            if ($inventory->stock >= $request->quantity) {
                 // Reduce the stock by the requested quantity
-                $inventory->stock -= $quantity;
+                $inventory->stock -= $request->quantity;
+                // add sold amount by quantity
+                $inventory->sold += $request->quantity;
+            
                 $inventory->save();
-
                 DB::commit();
 
-                return true; // Stock deduction successful
+                return true; // Success
             } else {
                 DB::rollback();
 
@@ -141,7 +148,7 @@ class InventoryController extends Controller
             $deleteTarget = Inventory::findOrFail($product_id);
             $deleteTarget->status = 'inactive';
             $deleteTarget->save();
-            
+
             DB::commit();
             return response()->json([
                 'message' => $deleteTarget->name . ' status successfully changed to inactive.'
@@ -173,15 +180,16 @@ class InventoryController extends Controller
         }
     }
 
-    public function get($product_id){
-        try{
+    public function get($product_id)
+    {
+        try {
             $target = Inventory::findOrFail($product_id);
 
             return response()->json([
                 'data' => $target,
                 'message' => 'successfully returns an item by id: ' . $product_id
             ], 200);
-        } catch (Exception $e){
+        } catch (Exception $e) {
             return response()->json([
                 'message' => 'failed to retrieve an item by id: ' . $product_id,
                 'reason' => $e->getMessage()

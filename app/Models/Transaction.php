@@ -13,8 +13,12 @@ class Transaction extends Model
     protected $fillable = [
         'user_id',
         'cashier_id',
+        'payment_method',
+        'payment_gateway',
         'total_before_discount',
         'discount',
+        'plastic_bag',
+        'payment_method',
         'total'
     ];
 

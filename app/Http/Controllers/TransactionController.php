@@ -21,18 +21,22 @@ class TransactionController extends Controller
             $request->validate([
                 'user_id' => 'required|string',
                 'cashier_id' => 'required|string',
+                'payment_method' => 'required|string',
                 'total_before_discount' => 'required|numeric',
                 'discount' => 'required|numeric',
+                'plastic_bag' => 'required|numeric',
                 'total' => 'required|numeric',
             ]);
 
             DB::beginTransaction();
 
             $transaction = Transaction::create([
-                'user_id' => 'f9a24e23-580a-4b65-8e8a-86d4639e1fb3',
+                'user_id' => '4916ded3-aab8-4eef-b113-13291c55a781',
                 'cashier_id' => $request->cashier_id,
+                'payment_method' => $request->payment_method,
                 'total_before_discount' => $request->total_before_discount,
                 'discount' => $request->discount,
+                'plastic_bag' => $request->plastic_bag,
                 'total' => $request->total
             ]);
 

@@ -36,7 +36,7 @@ class TransactionProductController extends Controller
             DB::commit();
 
             return response()->json([
-                'message' => 'Transaction created successfully',
+                'message' => 'Transaction product created successfully',
                 'data' => $transactionProduct
             ], 200);
         } catch (ValidationException $e) {

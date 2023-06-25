@@ -48,7 +48,7 @@ const login = async () => {
         if (error.response && error.response.status === 401) {
             errorMessage.value = 'Invalid email or password.';
         }
-        console.error(error)
+        // console.error(error)
     }
 };
 

@@ -9,7 +9,7 @@ import {
 
 import { getAllInventory, getAllMember } from "../../util/getData.js";
 import store from "../../util/store.js";
-import { logout } from "../../util/authUtils.js"
+import { logout } from "../../util/authUtils.js";
 import api from "../../api";
 
 const imagePath = ref("/logo/logo-v1.png");
@@ -22,11 +22,11 @@ let selectedProducts = ref([]);
 
 let members = [];
 let selectedMember = ref({
-    id: 'f9a24e23-580a-4b65-8e8a-86d4639e1fb3',
-    name: '',
+    id: "f9a24e23-580a-4b65-8e8a-86d4639e1fb3",
+    name: "",
 });
 let filteredMembers = ref([]);
-let searchQuery = ref('');
+let searchQuery = ref("");
 
 let subTotal = ref(0);
 let total = ref(0);
@@ -39,7 +39,7 @@ let transactionData = {
     total_before_discount: 0,
     discount: 0,
     total: 0,
-    user_id: 'f9a24e23-580a-4b65-8e8a-86d4639e1fb3',
+    user_id: "f9a24e23-580a-4b65-8e8a-86d4639e1fb3",
     cashier_id: user_data.data.id,
 };
 
@@ -58,52 +58,34 @@ const tokenExpiry = store.getters.getLoginTime + 6 * 60 * 60 * 1000; //expiratio
 /* on mount */
 onMounted(async () => {
     inventory.value = await getAllInventory(signature);
-    members = await getAllMember('cashier', signature);
+    members = await getAllMember("cashier", signature);
     detectCategories();
     memberSearch(); //store all members into filteredMembers array
 });
 
-/* API Calls */
-const submitTransaction = async () => {
-    if (selectedProducts.value.length > 0) {
-        try {
-            if (Date.now() < tokenExpiry) {
-                /* storing into transaction table */
-                transactionData.total_before_discount = subTotal.value;
-                transactionData.discount = discount.value;
-                transactionData.total = total.value;
 
-                console.log(transactionData);
+/* redirect */
+const goCheckout = () => {
+    if (Date.now() < tokenExpiry) {
+        if (selectedProducts.value.length > 0) {
+            transactionData.total_before_discount = subTotal.value;
+            transactionData.discount = discount.value;
+            transactionData.total = total.value;
 
-                const response_to_transaction = await api.post("api/transaction/add_transaction", transactionData, signature);
+            localStorage.setItem('transactionData', JSON.stringify(transactionData));
+            localStorage.setItem('productList', JSON.stringify(selectedProducts.value));
 
-                /* storing into transaction_products */
-                /* copy selected columns (id and quantity) of selectedProducts into transactionProductData */
-                transactionProductData = selectedProducts.value.map((product) => ({
-                    quantity: product.quantity,
-                    transaction_id: response_to_transaction.data.data.id,
-                    inventory_id: product.id,
-                }));
-
-                console.table(transactionProductData);
-                for (const data of transactionProductData) {
-                    await api.post("api/transaction/add_transaction_product", data, signature);
-                }
-
-                alert("Transaksi sukses!");
-                location.reload();
-            } else {
-                route.push({ path: '/cashier/login' });
-                alert("Token expired, please login again.");
-            }
-        } catch (error) {
-            alert(`Error terjadi ketika menambah transaksi ${error}`);
+            route.push({path: "/transaction/checkout"});
+        } else {
+            alert(
+                "Keranjang kosong! Harap isi keranjang terlebih dahulu sebelum melakukan transaksi."
+            );
         }
     } else {
-        alert('Keranjang kosong! Harap isi keranjang terlebih dahulu sebelum melakukan transaksi.')
+        route.push({ path: "/cashier/login" });
+        alert("Token expired, please login again.");
     }
 }
-
 
 /* views formatting */
 const detectCategories = () => {
@@ -112,7 +94,7 @@ const detectCategories = () => {
             categories.value.push(item.category);
         }
     });
-}
+};
 
 const formatPrice = (price) => {
     return "Rp " + price.toLocaleString("id-ID");
@@ -186,29 +168,29 @@ const selectMember = (member) => {
     selectedMember.id = member.id;
     selectedMember.name = member.name;
     console.log(selectedMember.value);
-}
+};
 </script>
 
 <template>
     <div class="flex flex-col min-h-screen">
         <header class="border border-b">
-            <div class="flex items-center text-lg ml-5 mr-10 justify-between">
+            <div class="flex items-center mr-5 text-lg justify-between">
                 <span class="flex flex-row gap-5 items-center">
-                    <a href="#" class="my-2 border-r border-black"><img :src="imagePath" style="width: 200px; height: 65px"
+                    <a href="#" class="my-2 border-black"><img :src="imagePath" style="width: 200px; height: 65px"
                             class="object-cover object-[50%_48%]" /></a>
-                    <p>CASHIER</p>
                 </span>
 
-                <div class="flex flex-cols gap-5 items-center justify-end">
+                <div class="flex flex-cols gap-5 items-center">
                     <a>Home</a>
-                    <a>Products</a>
+                    <a>Transaction Records</a>
                     <a>Stores</a>
-                    <button @click="logout('cashier', signature, route)"
-                        class="border-2 border-red-500 text-red-500 rounded-lg flex flex-row gap-1 items-center justify-center px-3 py-2 group hover:bg-red-500 hover:text-white hover:font-semibold">
-                        <ArrowRightOnRectangleIcon class="w-6 h-6" />
-                        <p>Logout</p>
-                    </button>
                 </div>
+
+                <button @click="logout('cashier', signature, route)"
+                    class="border-2 border-red-500 text-red-500 rounded-lg flex flex-row gap-1 items-center px-3 py-2 group hover:bg-red-500 hover:text-white hover:font-semibold">
+                    <ArrowRightOnRectangleIcon class="w-6 h-6" />
+                    <p>Logout</p>
+                </button>
             </div>
         </header>
 
@@ -256,7 +238,7 @@ const selectMember = (member) => {
                                         {{ formatPrice(product.price) }}
                                     </td>
                                     <td class="text-center pb-2">
-                                        <input type="number" v-model="product.quantity" :min="0"
+                                        <input type="number" v-model="product.quantity" :min="0" :max="product.stock"
                                             class="border focus:border-blue-500 text-center p-1 min-w-[40%] max-w-[40%]"
                                             @input="
                                                 calculateItemsSubTotal(product);
@@ -282,6 +264,8 @@ const selectMember = (member) => {
                         <p>Add Member</p>
                         <PlusCircleIcon class="w-10 h-10" />
                     </span>
+
+                    <!-- MODAL -->
                     <!-- MEMBER MODAL -->
                     <span :style="{
                         '--from-x': '50rem',
@@ -289,8 +273,7 @@ const selectMember = (member) => {
                     }" :class="{
     'opacity-90 fixed animate-slideIn':
         isShowingMemberModal,
-    'hidden':
-        !isShowingMemberModal,
+    hidden: !isShowingMemberModal,
 }" class="p-5 border-2 border-black rounded-tr-2xl rounded-br-2xl bg-white top-0 w-[47rem] h-screen">
                         <div class="w-full h-full flex gap-5 flex-col">
                             <span id="close" class="flex group justify-end bg-purple-300 cursor-pointer"
@@ -326,8 +309,9 @@ const selectMember = (member) => {
                 </div>
                 <span
                     class="h-full flex justify-center items-center p-4 bg-orange-500 text-white text-2xl font-semibold cursor-pointer"
-                    @click="submitTransaction()">PLACE ORDER</span>
+                    @click="goCheckout()">Checkout</span>
             </section>
+            <!-- Product Section --> 
             <section class="bg-white grow p-5">
                 <div class="flex flex-col pb-5">
                     <p class="text-3xl font-bold pb-5">Kategori Barang</p>
@@ -350,9 +334,12 @@ const selectMember = (member) => {
                             <span>
                                 <img :src="`/storage/images/inventory/${product.image}`" class="h-36" />
                             </span>
-                            <p class="text-xl text-center">
-                                {{ product.name }}
-                            </p>
+                            <span class="flex flex-col justify-center items-center">
+                                <p class="text-xl text-center">
+                                    {{ product.name }}
+                                </p>
+                                <p>Stok: {{ product.stock }}</p>
+                            </span>
                         </div>
                         <span class="w-full bg-orange-300 flex justify-center rounded-b-2xl py-2">
                             <p class="text-2xl font-semibold">

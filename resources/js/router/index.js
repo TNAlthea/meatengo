@@ -3,7 +3,8 @@ import customer_home from "../front-end/customer/home.vue";
 
 import cashier_login from "../front-end/cashier/login.vue";
 import cashier_dashboard from "../front-end/cashier/dashboard.vue";
-import cashier_transaction from "../front-end/cashier/transaction.vue";
+import cashier_transaction_record from "../front-end/cashier/transaction_records.vue";
+import transaction_checkout from "../front-end/cashier/checkout.vue";
 
 import admin_login from "../front-end/admin/login.vue";
 import admin_dashboard from "../front-end/admin/dashboard.vue";
@@ -31,9 +32,15 @@ const routes = [
         beforeEnter: requireCashierRole
     },
     {
-        path: "/cashier/transaction",
-        name: "cashier_transaction",
-        component: cashier_transaction,
+        path: "/transaction/checkout",
+        name: "transaction_checkout",
+        component: transaction_checkout,
+        beforeEnter: requireCashierRole
+    },
+    {
+        path: "/cashier/transaction_record",
+        name: "cashier_transaction_record",
+        component: cashier_transaction_record,
         beforeEnter: requireCashierRole
     },
     /* Admin */
