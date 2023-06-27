@@ -22,7 +22,7 @@ const signature = {
 const tokenExpiry = store.getters.getLoginTime + 6 * 60 * 60 * 1000; //expiration time of token is 6 hours from login
 
 onMounted(() => {
-    console.log(transactionProductData);
+    // console.log(transactionProductData);
 })
 
 let plasticBagCount = ref(0);

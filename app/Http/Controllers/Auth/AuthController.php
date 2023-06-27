@@ -53,6 +53,7 @@ class AuthController extends Controller
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users',
                 'password' => 'required|string|min:6',
+                'telephone' => 'required|string|min:9|max:15',
             ]);
 
             DB::beginTransaction();
@@ -61,6 +62,7 @@ class AuthController extends Controller
                 'name' => $request->name,
                 'email' => $request->email,
                 'role' => 'User',
+                'telephone' => $request->telephone,
                 'points' => 0,
                 'password' => Hash::make($request->password),
             ]);

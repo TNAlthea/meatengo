@@ -39,7 +39,7 @@ class UserManagementController extends Controller
     public function get_as_cashier()
     {
         try {
-            $users = User::select('id', 'name', 'email', 'created_at')->get();;
+            $users = User::select('id', 'name', 'email', 'points', 'telephone', 'created_at')->get();;
              
             if (!$users){
                 return response()->json([

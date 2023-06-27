@@ -32,6 +32,12 @@ const routes = [
         beforeEnter: requireCashierRole
     },
     {
+        path: "/cashier/transaction_record",
+        name: "cashier_transaction_record",
+        component: cashier_transaction_record,
+        beforeEnter: requireCashierRole
+    },
+    {
         path: "/transaction/checkout",
         name: "transaction_checkout",
         component: transaction_checkout,

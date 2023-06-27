@@ -63,6 +63,7 @@ Route::controller(UserManagementController::class)->group(function (){
 
 Route::controller(TransactionController::class)->group(function (){
     Route::post('transaction/add_transaction', 'add_transaction');
+    Route::get('transaction/get_all_transaction_history', 'get_all_transaction_history');
 });
 
 Route::controller(TransactionProductController::class)->group(function (){

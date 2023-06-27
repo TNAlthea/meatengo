@@ -31,7 +31,7 @@ class TransactionController extends Controller
             DB::beginTransaction();
 
             $transaction = Transaction::create([
-                'user_id' => '4916ded3-aab8-4eef-b113-13291c55a781',
+                'user_id' => $request->user_id, // this id is hardcoded, referenced to the first member in table that acts as a guest (when customer has no membership) 
                 'cashier_id' => $request->cashier_id,
                 'payment_method' => $request->payment_method,
                 'total_before_discount' => $request->total_before_discount,
@@ -56,6 +56,32 @@ class TransactionController extends Controller
             return response()->json([
                 'message' => 'Create new transaction failed',
                 'reason' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function get_all_transaction_history(Request $request)
+    {
+        try {
+            $perPage = 10; // Number of items per page
+            $currentPage = $request->input('page', 1); // Get the current page from the request query parameters
+
+            // Fetch the transaction history with pagination
+            $transactionHistory = Transaction::select('transactions.id AS transaction_id', 'transactions.sold_at', 'transactions.total_before_discount', 'transactions.discount', 'transactions.total', 'transactions.plastic_bag', 'transactions.payment_method', 'users.name AS customer_name', 'cashiers.name AS cashier_name', 'inventories.name AS product_name', 'transaction_products.quantity')
+                ->join('users', 'users.id', '=', 'transactions.user_id')
+                ->join('cashiers', 'cashiers.id', '=', 'transactions.cashier_id')
+                ->join('transaction_products', 'transactions.id', '=', 'transaction_products.transaction_id')
+                ->join('inventories', 'transaction_products.inventory_id', '=', 'inventories.id')
+                ->paginate(15, ['*'], 'transactions');
+
+            return response()->json([
+                'message' => 'Successfully retrieved transaction history',
+                'data' => $transactionHistory
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Failed to retrieve transaction history',
+                'reason' => $e->getMessage()
             ], 500);
         }
     }

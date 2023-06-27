@@ -42,9 +42,6 @@ const signature = {
     withCredentials: true,
 };
 
-onMounted(function async() {
-})
-
 /* API calls */
 const submitInventory = async () => {
     try {
@@ -63,8 +60,10 @@ const submitInventory = async () => {
             alert(`Produk ${form.name} sukses ditambahkan ke dalam database!`);
             location.reload();
         } else {
-            route.push({ path: '/admin/login' });
+            sessionStorage.removeItem("user_data");
+            store.dispatch("clearTokenExpirationTimer");
             alert("Token expired, please login again.");
+            route.push({ path: '/admin/login' });
         }
     } catch (error) {
         alert(`gagal menambahkan produk ke dalam inventory, alasan: ${error}`);
@@ -89,7 +88,7 @@ function previewImage(event) {
 <template>
     <body class="flex">
         <section id="sideNavBar" class="shrink h-screen w-1/5 text-lg py-10 flex flex-col justify-between">
-            <div class="flex flex-col gap-10 items-center  py-10 text-xl h-full border-r-2">
+            <div class="flex flex-col gap-10 items-center  py-10 text-xl h-full">
                 <span class="flex justify-center items-center border-b border-slate-500 mx-5">
                     <img :src="imagePath" class="object-cover h-28 w-96">
                 </span>
@@ -102,13 +101,13 @@ function previewImage(event) {
 
                     <span
                         class="flex flex-row gap-5 py-3 px-5 items-center group hover:bg-blue-500 hover:rounded-full hover:!text-white">
-                        <RectangleStackIcon class="h-6 w-6 text-blue-500 group-hover:text-white" />
+                        <RectangleStackIcon class="h-8 w-8 text-blue-500 group-hover:text-white" />
                         <router-link to="/admin/inventory_management" class="pb-1 group-hover:text-white">Inventory
                             Management</router-link>
                     </span>
                     <span
                         class="flex flex-row gap-5 py-3 px-5 items-center font-semibold group hover:bg-blue-500 hover:rounded-full hover:!text-white">
-                        <PlusCircleIcon class="h-8 w-8 text-blue-500 group-hover:text-white" />
+                        <PlusCircleIcon class="h-6 w-6 text-blue-500 group-hover:text-white" />
                         <router-link to="/admin/add_inventory" class="pb-1 group-hover:text-white">Add
                             Inventory</router-link>
                     </span>
@@ -121,52 +120,54 @@ function previewImage(event) {
                 </nav>
             </div>
         </section>
-        <section class="grow flex flex-col justify-start items-start p-10">
-            <span class="text-3xl py-5 w-full">
-                TAMBAH PRODUK KE DALAM INVENTORI/GUDANG
-            </span>
-            <div class="py-10  w-1/2">
-                <form @submit.prevent="submitInventory">
-                    <span class="flex flex-row gap-5 py-5 text-2xl">
-                        <label class="w-40">Nama Produk</label>
-                        <input type="name" v-model="form.name" name="nama_produk" class="border rounded-lg grow py-1 px-3"
-                            required />
-                    </span>
-                    <span class="flex flex-row gap-5 py-5 text-2xl">
-                        <label class="w-40">Harga</label>
-                        <span class="flex gap-3 grow">
-                            <p>Rp.</p>
-                            <input type="number" name="price" v-model="form.price" class="border rounded-lg grow py-1 px-3"
+        <section class="grow justify-start items-start p-10 bg-slate-100">
+            <div class="bg-white rounded-lg h-full p-10">
+                <span class="text-3xl py-5 w-full">
+                    TAMBAH PRODUK KE DALAM INVENTORI/GUDANG
+                </span>
+                <div class="py-10  w-1/2">
+                    <form @submit.prevent="submitInventory">
+                        <span class="flex flex-row gap-5 py-5 text-2xl">
+                            <label class="w-40">Nama Produk</label>
+                            <input type="name" v-model="form.name" name="nama_produk"
+                                class="border rounded-lg grow py-1 px-3" required />
+                        </span>
+                        <span class="flex flex-row gap-5 py-5 text-2xl">
+                            <label class="w-40">Harga</label>
+                            <span class="flex gap-3 grow">
+                                <p>Rp.</p>
+                                <input type="number" name="price" v-model="form.price"
+                                    class="border rounded-lg grow py-1 px-3" required />
+                            </span>
+                        </span>
+                        <span class="flex flex-row gap-5 py-5 text-2xl">
+                            <label class="w-40">Stok</label>
+                            <input type="number" name="stock" v-model="form.stock" class="border rounded-lg grow py-1 px-3"
                                 required />
                         </span>
-                    </span>
-                    <span class="flex flex-row gap-5 py-5 text-2xl">
-                        <label class="w-40">Stok</label>
-                        <input type="number" name="stock" v-model="form.stock" class="border rounded-lg grow py-1 px-3"
-                            required />
-                    </span>
-                    <span class="flex flex-row gap-5 py-5 text-2xl">
-                        <label class="w-40">Kategori</label>
-                        <select class="border rounded-lg bg-white grow py-1 px-3" v-model="form.category" required>
-                            <option class="bg-white" v-for="category in categoriesOption" :value="category.name">
-                                {{ category.name }}
-                            </option>
-                        </select>
-                    </span>
-                    <span class="grid grid-cols-2 gap-5 py-5 text-xl">
-                        <span class="flex flex-col gap-3">
-                            <label class="w-40">Foto Produk</label>
-                            <input type="file" ref="fileInput" @change="previewImage" required />
+                        <span class="flex flex-row gap-5 py-5 text-2xl">
+                            <label class="w-40">Kategori</label>
+                            <select class="border rounded-lg bg-white grow py-1 px-3" v-model="form.category" required>
+                                <option class="bg-white" v-for="category in categoriesOption" :value="category.name">
+                                    {{ category.name }}
+                                </option>
+                            </select>
                         </span>
-                        <img v-if="previewImageUpload" class="bg-red-500 w-72 h-72 object-cover" :src="previewImageUpload"
-                            alt="Preview" />
-                    </span>
-                    <span>
-                        <button type="submit"
-                            class="bg-slate-500 rounded-lg text-xl text-white font-semibold py-3 w-full mx-auto">Tambah
-                            Produk!</button>
-                    </span>
-                </form>
+                        <span class="grid grid-cols-2 gap-5 py-5 text-xl">
+                            <span class="flex flex-col gap-3">
+                                <label class="w-40">Foto Produk</label>
+                                <input type="file" ref="fileInput" @change="previewImage" required />
+                            </span>
+                            <img v-if="previewImageUpload" class="bg-red-500 w-72 h-72 object-cover"
+                                :src="previewImageUpload" alt="Preview" />
+                        </span>
+                        <span>
+                            <button type="submit"
+                                class="bg-slate-500 rounded-lg text-xl text-white font-semibold py-3 w-full mx-auto">Tambah
+                                Produk!</button>
+                        </span>
+                    </form>
+                </div>
             </div>
         </section>
     </body>

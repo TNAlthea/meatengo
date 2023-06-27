@@ -5,6 +5,8 @@ import {
     PlusCircleIcon,
     ArrowRightOnRectangleIcon,
     XCircleIcon,
+    XMarkIcon,
+    UserCircleIcon
 } from "@heroicons/vue/24/outline";
 
 import { getAllInventory, getAllMember } from "../../util/getData.js";
@@ -15,35 +17,6 @@ import api from "../../api";
 const imagePath = ref("/logo/logo-v1.png");
 const user_data = JSON.parse(sessionStorage.getItem("user_data"));
 const route = useRouter();
-
-let inventory = ref([]);
-let categories = ref([]);
-let selectedProducts = ref([]);
-
-let members = [];
-let selectedMember = ref({
-    id: "f9a24e23-580a-4b65-8e8a-86d4639e1fb3",
-    name: "",
-});
-let filteredMembers = ref([]);
-let searchQuery = ref("");
-
-let subTotal = ref(0);
-let total = ref(0);
-let discount = ref(0);
-
-let isShowingMemberModal = ref(false);
-
-/* object to store data that will be send into database through API */
-let transactionData = {
-    total_before_discount: 0,
-    discount: 0,
-    total: 0,
-    user_id: "f9a24e23-580a-4b65-8e8a-86d4639e1fb3",
-    cashier_id: user_data.data.id,
-};
-
-let transactionProductData = [];
 
 /* token credentials */
 const headers = {
@@ -57,17 +30,47 @@ const tokenExpiry = store.getters.getLoginTime + 6 * 60 * 60 * 1000; //expiratio
 
 /* on mount */
 onMounted(async () => {
-    inventory.value = await getAllInventory(signature);
-    members = await getAllMember("cashier", signature);
+    inventory.value = await getAllInventory('cashier', signature, route);
+    members = await getAllMember("cashier", signature, route);
     detectCategories();
     memberSearch(); //store all members into filteredMembers array
 });
 
+let inventory = ref([]);
+let categories = ref([]);
+let selectedProducts = ref([]);
+
+let members = [];
+let selectedMember = ref({
+    id: "ed90502c-001c-4c70-bbf9-830c421184e7",
+    name: "guest",
+    points: 0,
+    telephone: "08123123123"
+});
+let filteredMembers = ref([]);
+let searchQuery = ref("");
+
+let subTotal = ref(0);
+let total = ref(0);
+let discount = ref(0);
+
+let isShowingMemberModal = ref(false);
+
+/* object to store data that will be send into database through API */
+let transactionData = {
+    // set default value
+    total_before_discount: 0,
+    discount: 0,
+    total: 0,
+    user_id: "ed90502c-001c-4c70-bbf9-830c421184e7",
+    cashier_id: user_data.data.id,
+};
 
 /* redirect */
 const goCheckout = () => {
     if (Date.now() < tokenExpiry) {
         if (selectedProducts.value.length > 0) {
+            if (selectedMember) transactionData.user_id = selectedMember.value.id;
             transactionData.total_before_discount = subTotal.value;
             transactionData.discount = discount.value;
             transactionData.total = total.value;
@@ -75,7 +78,7 @@ const goCheckout = () => {
             localStorage.setItem('transactionData', JSON.stringify(transactionData));
             localStorage.setItem('productList', JSON.stringify(selectedProducts.value));
 
-            route.push({path: "/transaction/checkout"});
+            route.push({ path: "/transaction/checkout" });
         } else {
             alert(
                 "Keranjang kosong! Harap isi keranjang terlebih dahulu sebelum melakukan transaksi."
@@ -120,15 +123,20 @@ const getDate = () => {
 };
 
 const addItem = (item) => {
-    if (
-        !selectedProducts.value.some(
-            (selectedProducts) => selectedProducts.id === item.id
-        )
-    ) {
-        item.quantity = 1;
-        selectedProducts.value.push(item);
+    if (item.stock > 0) {
+        if (!selectedProducts.value.some((selectedProducts) => selectedProducts.id === item.id)) {
+            item.quantity = 1;
+            selectedProducts.value.push(item);
+        }
+    } else {
+        alert(`stok produk ${item.name} kosong!`);
     }
 };
+
+const deleteItem = (item) => {
+    total.value -= item.subTotal;
+    selectedProducts.value = selectedProducts.value.filter((products) => products.id !== item.id);
+}
 
 const calculateItemsSubTotal = (item) => {
     item.subTotal = item.price * item.quantity;
@@ -165,8 +173,10 @@ const memberSearch = () => {
 };
 
 const selectMember = (member) => {
-    selectedMember.id = member.id;
-    selectedMember.name = member.name;
+    selectedMember.value.id = member.id;
+    selectedMember.value.name = member.name;
+    selectedMember.value.points = member.points;
+    selectedMember.value.telephone = member.telephone;
     console.log(selectedMember.value);
 };
 </script>
@@ -180,10 +190,13 @@ const selectMember = (member) => {
                             class="object-cover object-[50%_48%]" /></a>
                 </span>
 
-                <div class="flex flex-cols gap-5 items-center">
-                    <a>Home</a>
-                    <a>Transaction Records</a>
-                    <a>Stores</a>
+                <div class="flex flex-cols gap-10 p-2 items-center rounded-full shadow-inner shadow-slate-300">
+                    <router-link to="/cashier/dashboard"
+                        class="font-semibold hover:rounded-full hover:bg-slate-200 p-3">Home</router-link>
+                    <router-link to="/cashier/transaction_record" class="hover:rounded-full hover:bg-slate-200 p-3">Histori
+                        Transaksi</router-link>
+                    <router-link to="/cashier/dashboard" class="hover:rounded-full hover:bg-slate-200 p-3">Daftar
+                        Member</router-link>
                 </div>
 
                 <button @click="logout('cashier', signature, route)"
@@ -215,32 +228,32 @@ const selectMember = (member) => {
                         <table class="table-fixed min-w-full max-w-full">
                             <thead>
                                 <tr>
-                                    <th class="text-start pb-2 min-w-[35%] max-w-[35%]">
+                                    <th class="text-start">
                                         Nama Produk
                                     </th>
-                                    <th class="text-center pb-2 min-w-[20%] max-w-[20%]">
+                                    <th class="text-center">
                                         Harga Satuan
                                     </th>
-                                    <th class="text-center pb-2 min-w-[20%] max-w-[20%]">
+                                    <th class="text-center">
                                         QTY
                                     </th>
-                                    <th class="text-end pb-2 min-w-[25%] max-w-[25%]">
-                                        Total
+                                    <th class="text-center">
+                                        Total Harga Produk
                                     </th>
+                                    <th class="text-end">Hapus?</th>
                                 </tr>
                             </thead>
                             <tbody v-for="product in selectedProducts" :key="selectedProducts.id">
-                                <tr>
-                                    <td class="text-start pb-2">
+                                <tr class="border-b">
+                                    <td class="text-start">
                                         {{ product.name }}
                                     </td>
-                                    <td class="text-center pb-2">
+                                    <td class="text-center">
                                         {{ formatPrice(product.price) }}
                                     </td>
-                                    <td class="text-center pb-2">
+                                    <td class="text-center">
                                         <input type="number" v-model="product.quantity" :min="0" :max="product.stock"
-                                            class="border focus:border-blue-500 text-center p-1 min-w-[40%] max-w-[40%]"
-                                            @input="
+                                            class="border focus:border-blue-500 text-center p-1 w-20" @input="
                                                 calculateItemsSubTotal(product);
                                             calculateAllSubTotal(product);
                                             calculateTotal(
@@ -249,8 +262,12 @@ const selectMember = (member) => {
                                             );
                                             " />
                                     </td>
-                                    <td class="text-end pb-2">
+                                    <td class="text-center">
                                         {{ formatPrice(product.subTotal || 0) }}
+                                    </td>
+                                    <td class="flex justify-center items-center mt-1 text-slate-500 border-2 border-slate-500 hover:border-red-500 hover:text-red-500">
+                                        <XMarkIcon class="w-8 h-8 cursor-pointer"
+                                            @click="deleteItem(product)" />
                                     </td>
                                 </tr>
                             </tbody>
@@ -258,13 +275,18 @@ const selectMember = (member) => {
                     </section>
                 </div>
                 <div class="flex flex-row justify-between items-center py-2">
-                    <span
-                        class="flex justify-around items-center border w-full h-full me-10 bg-black text-white text-2xl cursor-pointer"
+                    <span v-if="selectedMember.name=== 'guest'"
+                        class="rounded-md flex justify-around items-center border w-full h-full me-10 bg-black text-white text-2xl cursor-pointer"
                         @click="showMemberModal()">
                         <p>Add Member</p>
                         <PlusCircleIcon class="w-10 h-10" />
                     </span>
-
+                    <span v-else
+                        class="rounded-md flex gap-5 justify-center items-center border-2 border-black w-full h-full me-10 bg-white text-2xl cursor-pointer"
+                        @click="showMemberModal()">
+                        <UserCircleIcon class="w-10 h-10"/>
+                        <p class="pb-2">{{ `${selectedMember.name} (poin: ${selectedMember.points})` }}</p>
+                    </span>
                     <!-- MODAL -->
                     <!-- MEMBER MODAL -->
                     <span :style="{
@@ -276,8 +298,7 @@ const selectMember = (member) => {
     hidden: !isShowingMemberModal,
 }" class="p-5 border-2 border-black rounded-tr-2xl rounded-br-2xl bg-white top-0 w-[47rem] h-screen">
                         <div class="w-full h-full flex gap-5 flex-col">
-                            <span id="close" class="flex group justify-end bg-purple-300 cursor-pointer"
-                                @click="closeMemberModal()">
+                            <span id="close" class="flex group justify-end cursor-pointer" @click="closeMemberModal()">
                                 <span class="flex flex-row items-center hover:text-red-500">
                                     <p
                                         class="text-2xl transition ease-in delay-50 opacity-0 -translate-x-0 group-hover:-translate-x-1 group-hover:opacity-100">
@@ -311,7 +332,7 @@ const selectMember = (member) => {
                     class="h-full flex justify-center items-center p-4 bg-orange-500 text-white text-2xl font-semibold cursor-pointer"
                     @click="goCheckout()">Checkout</span>
             </section>
-            <!-- Product Section --> 
+            <!-- Product Section -->
             <section class="bg-white grow p-5">
                 <div class="flex flex-col pb-5">
                     <p class="text-3xl font-bold pb-5">Kategori Barang</p>
@@ -338,7 +359,7 @@ const selectMember = (member) => {
                                 <p class="text-xl text-center">
                                     {{ product.name }}
                                 </p>
-                                <p>Stok: {{ product.stock }}</p>
+                                <p :class="{ 'text-red-500 font-semibold': product.stock == 0 }">Stok: {{ product.stock }}</p>
                             </span>
                         </div>
                         <span class="w-full bg-orange-300 flex justify-center rounded-b-2xl py-2">

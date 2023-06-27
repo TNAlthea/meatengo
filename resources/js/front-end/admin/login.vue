@@ -35,7 +35,6 @@ const login = async () => {
         store.commit('setEntity', 'admin');
         store.commit('setRoute', route);
         store.commit('setLoginTime', Date.now());
-
         // store data into localstorage so store's state can be restored in case of page refresh
         const state = store.state;
         localStorage.setItem('storeState', JSON.stringify(state));

@@ -5,6 +5,7 @@ import store from '../../util/store.js';
 import api from '../../api.js';
 
 import { logout } from '../../util/authUtils.js';
+import { getAllInventory } from '../../util/getData.js';
 /* Hero Icons */
 import { HomeIcon, PlusCircleIcon, ArrowRightOnRectangleIcon, RectangleStackIcon, XCircleIcon, ArrowsUpDownIcon } from '@heroicons/vue/24/outline';
 import { HomeIcon as SolidHomeIcon, PlusCircleIcon as SolidPlusCircleIcon, ArrowRightOnRectangleIcon as SolidArrowRightOnRectangleIcon, RectangleStackIcon as SolidRectangleStackIcon } from '@heroicons/vue/24/solid';
@@ -12,7 +13,7 @@ import { HomeIcon as SolidHomeIcon, PlusCircleIcon as SolidPlusCircleIcon, Arrow
 const imagePath = ref('/logo/logo-v1.png');
 const route = useRouter();
 const user_data = JSON.parse(sessionStorage.getItem("user_data"));
-const tokenExpiry = store.getters.getLoginTime + 6 * 60 * 60 * 1000; 
+const tokenExpiry = store.getters.getLoginTime + 6 * 60 * 60 * 1000;
 
 let inventory = ref([]);
 let filteredInventory = ref([]);
@@ -44,33 +45,25 @@ const signature = {
 };
 
 onMounted(async () => {
-    await getAllInventory();
-    clearFilterByCategory();
-})
-
-/* API calls */
-const getAllInventory = async () => {
-    try {
-        if (Date.now() < tokenExpiry) {
-            const response = await api.get('api/inventory/getAll', signature);
-            inventory.value = response.data.data;
+    const response = await getAllInventory('admin', signature, route);
+    if (response) {
+        try {
+            inventory.value = response;
 
             inventory.value.forEach((item) => {
                 if (!categories.value.includes(item.category)) {
                     categories.value.push(item.category);
                 }
             });
-        } else {
-            route.push({ path: '/admin/login' });
-            alert("Token expired, please login again.");
+        } catch (error) {
+            alert(`Error terjadi ketika memuat inventori produk, alasan: ${error}`);
+            console.error(error);
         }
-    } catch (error) {
-        alert(`Error terjadi ketika memuat inventori produk, alasan: ${error}`);
-        console.error(error);
-
     }
-};
+    clearFilterByCategory();
+})
 
+/* API calls */
 const deleteProduct = async (product) => {
     try {
         if (Date.now() < tokenExpiry) {

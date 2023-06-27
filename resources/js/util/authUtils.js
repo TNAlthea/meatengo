@@ -9,12 +9,11 @@ export const logout = async (entity, signature, route) => {
             signature
         );
         sessionStorage.removeItem("user_data");
-        console.log(store.getters.getLoginTime.toString());
         store.dispatch("clearTokenExpirationTimer");
-        if (entity !== "user") route.push({ path: `/${entity}/login` });
-        else route.push({ path: `/login` });
     } catch (error) {
         alert(error);
         console.error(error);
     }
+    if (entity !== "user") route.push({ path: `/${entity}/login` });
+    else route.push({ path: `/login` });
 };
