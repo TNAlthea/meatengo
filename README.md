@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img src="https://github.com/TNAlthea/meatengo/assets/99664611/808ea732-c4ea-4b2e-9983-2114213f018a" />
+  <img src="https://github.com/TNAlthea/meatengo/assets/99664611/44c0be2e-13ac-41cf-8d3a-f0fb3bd2ade4" />
 </p>
 
 Meatengo is a multi-site built with Vue 3 as the front-end and Laravel API as the back-end. Meatengo is a grocery store that has all your daily needs, water; food; snacks; you name it. Meatengo's application has three core functionality.
