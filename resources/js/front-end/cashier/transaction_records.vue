@@ -8,6 +8,8 @@ import {
     ChevronRightIcon,
     XCircleIcon,
     PencilSquareIcon,
+    ChevronDownIcon,
+    ChevronUpIcon,
 
 } from "@heroicons/vue/24/outline";
 import dayjs from 'dayjs';
@@ -31,6 +33,10 @@ const signature = {
     withCredentials: true,
 };
 const tokenExpiry = store.getters.getLoginTime + 6 * 60 * 60 * 1000; //expiration time of token is 6 hours from login
+
+let isShowingDetails = ref(false);
+let isShowingProductCollapse = ref(false);
+let selectedTransactionItem = ref({});
 
 const allTransactionData = ref();
 /* On mounted */
@@ -69,7 +75,21 @@ const formatDate = (date) => {
 const formatPrice = (price) => {
     return "Rp " + price.toLocaleString("id-ID");
 };
+
+const selectTransaction = (item) => {
+    isShowingDetails.value = true;
+    selectedTransactionItem.value = item;
+    console.log(selectedTransactionItem)
+}
+const closeDetailModal = () => {
+    isShowingDetails.value = false;
+}
+const toggleProductListCollapse = () => {
+    if (isShowingProductCollapse.value === true) isShowingProductCollapse.value = false;
+    else isShowingProductCollapse.value = true;
+}
 </script>
+
 <template>
     <div class="flex flex-col min-h-screen">
         <header class="border border-b">
@@ -84,7 +104,7 @@ const formatPrice = (price) => {
                         class="hover:rounded-full hover:bg-slate-200 p-3">Home</router-link>
                     <router-link to="/cashier/transaction_record"
                         class="font-semibold hover:rounded-full hover:bg-slate-200 p-3">Histori Transaksi</router-link>
-                    <router-link to="/cashier/dashboard" class="hover:rounded-full hover:bg-slate-200 p-3">Daftar
+                    <router-link to="/cashier/register_member" class="hover:rounded-full hover:bg-slate-200 p-3">Daftar
                         Member</router-link>
                 </div>
 
@@ -101,7 +121,7 @@ const formatPrice = (price) => {
                 <div class="bg-white h-[85vh] w-[95vw] p-10 rounded-2xl drop-shadow-md">
                     <div class="shadow-slate-300 shadow-md rounded-2xl w-full h-fit">
                         <div>
-                            WOW
+                            Tabel
                         </div>
                         <table class="w-full rounded-full">
                             <thead class="bg-blue-100 text-gray-600 table-auto font-semibold ">
@@ -120,9 +140,9 @@ const formatPrice = (price) => {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr class="text-start" :class="{'border-b-2': index !== (allTransactionData.length - 1)}" v-for="(item, index) in allTransactionData"
-                                    :key="item.id">
-                                    <td class="px-5 py-3"> {{ index+1 }} </td>
+                                <tr class="text-start" :class="{ 'border-b-2': index !== (allTransactionData.length - 1) }"
+                                    v-for="(item, index) in allTransactionData" :key="item.id">
+                                    <td class="px-5 py-3"> {{ index + 1 }} </td>
                                     <td class="px-5 py-3"> {{ item.id }} </td>
                                     <td class="px-5 py-3"> {{ formatDate(item.sold_at) }} </td>
                                     <td class="px-5 py-3"> {{ item.customer_name }} </td>
@@ -133,7 +153,8 @@ const formatPrice = (price) => {
                                     <td class="px-5 py-3"> {{ item.discount }} </td>
                                     <td class="px-5 py-3"> {{ formatPrice(item.total) }} </td>
                                     <td class="px-5 py-3">
-                                        <ChevronRightIcon class="w-6 h-6 text-gray-500 cursor-pointer" />
+                                        <ChevronRightIcon class="w-6 h-6 text-gray-500 cursor-pointer"
+                                            @click="selectTransaction(item)" />
                                     </td>
                                 </tr>
                             </tbody>
@@ -141,6 +162,71 @@ const formatPrice = (price) => {
                     </div>
                 </div>
             </div>
+            <!-- Modal -->
+            <section v-if="isShowingDetails"
+                class="absolute top-0 left-0 h-screen w-[30vw] flex justify-center items-center bg-white rounded-2xl shadow-lg"
+                :style="{
+                    '--from-x': '30rem',
+                    '--target-x': '0rem',
+                }" :class="{
+    'opacity-95 fixed animate-slideIn':
+        isShowingDetails,
+    hidden: !isShowingDetails,
+}">
+                <div class="flex flex-col w-full h-[95vh] m-10">
+                    <span id="close" class="flex group justify-end cursor-pointer" @click="closeDetailModal()">
+                        <span class="flex flex-row items-center hover:text-red-500">
+                            <p
+                                class="text-2xl transition ease-in delay-50 opacity-0 -translate-x-0 group-hover:-translate-x-1 group-hover:opacity-100">
+                                Tutup
+                            </p>
+                            <XCircleIcon class="w-12 h-12" />
+                        </span>
+                    </span>
+                    <p class="text-2xl">Detail Transaksi</p>
+                    <div class="my-5 p-5 border flex flex-col gap-5 border-slate-500">
+                        <span class="flex flex-row border-b-2 border-slate-300 pb-2 justify-between items-center">
+                            <p>ID transaksi</p>
+                            <p>{{ selectedTransactionItem.id }}</p>
+                        </span>
+                        <span class="flex flex-row border-b-2 border-slate-300 pb-2 justify-between items-center">
+                            <p>Tanggal Transaksi</p>
+                            <p>{{ formatDate(selectedTransactionItem.sold_at) }}</p>
+                        </span>
+                        <span class="flex flex-row border-b-2 border-slate-300 pb-2 justify-between items-center">
+                            <p>Kasir</p>
+                            <p>{{ selectedTransactionItem.cashier_name }}</p>
+                        </span>
+                        <span class="flex flex-row border-b-2 border-slate-300 pb-2 justify-between items-center">
+                            <p>Customer</p>
+                            <p>{{ selectedTransactionItem.customer_name }}</p>
+                        </span>
+                        <span class="flex flex-row justify-between items-center" :class="{'border-b-2 pb-2 border-slate-300': !isShowingProductCollapse}">
+                            <p>Produk</p>
+                            <ChevronDownIcon v-if="isShowingProductCollapse === false" class="w-6 h-6 text-gray-500 cursor-pointer" @click="toggleProductListCollapse()"/>
+                            <ChevronUpIcon v-else class="w-6 h-6 text-gray-500 cursor-pointer" @click="toggleProductListCollapse()"/>
+                        </span>
+                        <section v-if="isShowingProductCollapse" class="border flex flex-col gap-3 border-slate-300 rounded-sm p-1">
+                            <span class="flex flex-row justify-between items-center" v-for="item in selectedTransactionItem.products">
+                                <p>{{ item.product }}</p>
+                                <p>{{ `${item.quantity} pc(s)` }}</p>
+                            </span>
+                        </section>
+                        <span class="flex flex-row border-b-2 border-slate-300 pb-2 justify-between items-center">
+                            <p>Metode pembayaran</p>
+                            <p>{{ selectedTransactionItem.payment_method }}</p>
+                        </span>
+                        <span class="flex flex-row border-b-2 border-slate-300 pb-2 justify-between items-center">
+                            <p>Diskon</p>
+                            <p>{{ `${selectedTransactionItem.discount}%` }}</p>
+                        </span>
+                        <span class="flex flex-row border-b-2 border-slate-300 pb-2 justify-between items-center">
+                            <p>Total belanja</p>
+                            <p>{{ formatPrice(selectedTransactionItem.total) }}</p>
+                        </span>
+                    </div>
+                </div>
+            </section>
         </body>
     </div>
 </template>

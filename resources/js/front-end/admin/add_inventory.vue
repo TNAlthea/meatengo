@@ -54,7 +54,6 @@ const submitInventory = async () => {
             formData.append('image', form.image);
 
             const response = await api.post('/api/inventory/add_inventory', formData, signature);
-            console.log(response.data.data.id)
             route.push({ path: '/admin/dashboard' });
 
             alert(`Produk ${form.name} sukses ditambahkan ke dalam database!`);
@@ -66,7 +65,13 @@ const submitInventory = async () => {
             route.push({ path: '/admin/login' });
         }
     } catch (error) {
-        alert(`gagal menambahkan produk ke dalam inventory, alasan: ${error}`);
+        // if json response has message in it 
+        if (error.response){
+            const errorMessage = error.response.data;
+            alert(`gagal menambahkan produk ke dalam inventory. ${errorMessage.message}, alasan: ${errorMessage.reason}`);
+        } else {
+            alert(`gagal menambahkan produk ke dalam inventory. coba lagi nanti.`);
+        }
     }
 };
 

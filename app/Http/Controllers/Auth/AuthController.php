@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Exception;
 
@@ -59,8 +60,8 @@ class AuthController extends Controller
             DB::beginTransaction();
 
             $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
+                'name' => Str::of($request->name)->lower(),
+                'email' => Str::of($request->email)->lower(),
                 'role' => 'User',
                 'telephone' => $request->telephone,
                 'points' => 0,
@@ -113,5 +114,29 @@ class AuthController extends Controller
                 'type' => 'bearer',
             ]
         ]);
+    }
+
+    //misc
+    public function add_points($id, $points)
+    {
+        try {
+            $user = User::findOrFail($id);
+
+            DB::beginTransaction();
+            $user->points += $points;
+
+            $user->save();
+            DB::commit();
+
+            return response()->json([
+                'message' => "points added to $user->name successfully",
+                "$user->name's points" => $user->points,
+            ], 200);
+        } catch (Exception $e){
+            return response()->json([
+                'message' => "Error when adding $user->name points",
+                'reason' => $e->getMessage(),
+            ], 500); 
+        }
     }
 }

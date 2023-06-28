@@ -108,8 +108,12 @@ const submitTransaction = async () => {
             alert("Token expired, please login again.");
         }
     } catch (error) {
-        alert(`Error terjadi ketika menambah transaksi ${error}`);
-        console.error(error);
+        if (error.response) {
+            const errorMessage = error.response.data;
+            alert(`Error terjadi menambah transaksi. ${errorMessage.message}, alasan: ${errorMessage.reason}`);
+        } else {
+            alert(error)
+        }
     }
 }
 

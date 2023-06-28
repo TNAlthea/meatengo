@@ -9,10 +9,14 @@ export const getAllInventory = async (entity, signature, route) => {
 
             return response.data.data;
         } catch (error) {
-            alert(
-                `Error terjadi ketika memuat inventori produk, alasan: ${error}`
-            );
-            console.error(error);
+            if (error.response) {
+                const errorMessage = error.response.data;
+                alert(
+                    `Error terjadi ketika memuat inventori. ${errorMessage.message}, alasan: ${errorMessage.reason}`
+                );
+            } else {
+                alert(error);
+            }
         }
     } else {
         alert(`token expired, please login again.`);
@@ -33,10 +37,14 @@ export const getAllMember = async (entity, signature, route) => {
 
             return response.data.data;
         } catch (error) {
-            alert(
-                `Error terjadi ketika memuat daftar member, alasan: ${error}`
-            );
-            console.error(error);
+            if (error.response) {
+                const errorMessage = error.response.data;
+                alert(
+                    `Error terjadi ketika memuat daftar member. ${errorMessage.message}, alasan: ${errorMessage.reason}`
+                );
+            } else {
+                alert(error);
+            }
         }
     } else {
         alert(`token expired, please login again.`);
@@ -55,7 +63,7 @@ export const getAllTransaction = async (entity, signature, route, page) => {
                 signature
             );
             const rawTransactionList = response.data.data.data;
-            console.log(rawTransactionList)
+            console.log(rawTransactionList);
             const concatenatedProductList = {};
 
             rawTransactionList.forEach((transaction) => {
@@ -96,10 +104,14 @@ export const getAllTransaction = async (entity, signature, route, page) => {
 
             return transactionList;
         } catch (error) {
-            alert(
-                `Error terjadi ketika memuat daftar histori transaksi, alasan: ${error}`
-            );
-            console.error(error);
+            if (error.response) {
+                const errorMessage = error.response.data;
+                alert(
+                    `Error terjadi ketika memuat daftar histori transaksi. ${errorMessage.message}, alasan: ${errorMessage.reason}`
+                );
+            } else {
+                alert(error);
+            }
         }
     } else {
         alert(`token expired, please login again.`);

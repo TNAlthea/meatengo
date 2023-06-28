@@ -79,9 +79,12 @@ const deleteProduct = async (product) => {
             alert("Token expired, please login again.");
         }
     } catch (error) {
-        alert(`Error terjadi ketika menghapus ${product.name}, alasan: ${error}`);
-        console.error(error);
-
+        if (error.response) {
+            const errorMessage = error.response.data;
+            alert(`Error terjadi ketika menghapus ${product.name}. ${errorMessage.message}, alasan: ${errorMessage.reason}`);
+        } else {
+            alert(error)
+        }
     }
 }
 
@@ -107,8 +110,12 @@ const updateProduct = async (product) => {
             alert("Token expired, please login again.");
         }
     } catch (error) {
-        alert(`[${error}] Error terjadi ketika sedang mengupdate ${product.name}`);
-        console.error(error);
+        if (error.response) {
+            const errorMessage = error.response.data;
+            alert(`Error terjadi ketika mengupdate ${product.name}. ${errorMessage.message}, alasan: ${errorMessage.reason}`);
+        } else {
+            alert(error)
+        }
     }
 }
 

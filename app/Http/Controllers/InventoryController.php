@@ -18,6 +18,13 @@ class InventoryController extends Controller
     public function add_inventory(Request $request)
     {
         try {
+            $checkExistingName = Inventory::where('name', $request->name)->first();
+            if ($checkExistingName){
+                return response()->json([
+                    'message' => 'konflik atribut ketika mencoba menambah data baru',
+                    'reason' => "nama produk $request->name sudah dipakai dalam database"
+                ], 409);
+            }
             $request->validate([
                 'name' => 'required|string|max:255',
                 'price' => 'required|numeric',

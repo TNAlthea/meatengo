@@ -6,7 +6,8 @@ import {
     ArrowRightOnRectangleIcon,
     XCircleIcon,
     XMarkIcon,
-    UserCircleIcon
+    UserCircleIcon,
+    MagnifyingGlassCircleIcon
 } from "@heroicons/vue/24/outline";
 
 import { getAllInventory, getAllMember } from "../../util/getData.js";
@@ -91,6 +92,12 @@ const goCheckout = () => {
 }
 
 /* views formatting */
+const handleNumberInput = (product) => {
+    if (product.quantity < 0) product.quantity = 0;
+    else if (product.quantity > product.stock) product.quantity = product.stock;
+    else product.quantity = product.quantity;
+}
+
 const detectCategories = () => {
     inventory.value.forEach((item) => {
         if (!categories.value.includes(item.category)) {
@@ -177,7 +184,6 @@ const selectMember = (member) => {
     selectedMember.value.name = member.name;
     selectedMember.value.points = member.points;
     selectedMember.value.telephone = member.telephone;
-    console.log(selectedMember.value);
 };
 </script>
 
@@ -195,7 +201,7 @@ const selectMember = (member) => {
                         class="font-semibold hover:rounded-full hover:bg-slate-200 p-3">Home</router-link>
                     <router-link to="/cashier/transaction_record" class="hover:rounded-full hover:bg-slate-200 p-3">Histori
                         Transaksi</router-link>
-                    <router-link to="/cashier/dashboard" class="hover:rounded-full hover:bg-slate-200 p-3">Daftar
+                    <router-link to="/cashier/register_member" class="hover:rounded-full hover:bg-slate-200 p-3">Daftar
                         Member</router-link>
                 </div>
 
@@ -253,8 +259,8 @@ const selectMember = (member) => {
                                     </td>
                                     <td class="text-center">
                                         <input type="number" v-model="product.quantity" :min="0" :max="product.stock"
-                                            class="border focus:border-blue-500 text-center p-1 w-20" @input="
-                                                calculateItemsSubTotal(product);
+                                            class="border focus:border-blue-500 text-center p-1 w-20" @input="handleNumberInput(product);
+                                            calculateItemsSubTotal(product);
                                             calculateAllSubTotal(product);
                                             calculateTotal(
                                                 subTotal,
@@ -265,9 +271,9 @@ const selectMember = (member) => {
                                     <td class="text-center">
                                         {{ formatPrice(product.subTotal || 0) }}
                                     </td>
-                                    <td class="flex justify-center items-center mt-1 text-slate-500 border-2 border-slate-500 hover:border-red-500 hover:text-red-500">
-                                        <XMarkIcon class="w-8 h-8 cursor-pointer"
-                                            @click="deleteItem(product)" />
+                                    <td
+                                        class="flex justify-center items-center mt-1 text-slate-500 border-2 border-slate-500 hover:border-red-500 hover:text-red-500">
+                                        <XMarkIcon class="w-8 h-8 cursor-pointer" @click="deleteItem(product)" />
                                     </td>
                                 </tr>
                             </tbody>
@@ -275,7 +281,7 @@ const selectMember = (member) => {
                     </section>
                 </div>
                 <div class="flex flex-row justify-between items-center py-2">
-                    <span v-if="selectedMember.name=== 'guest'"
+                    <span v-if="selectedMember.name === 'guest'"
                         class="rounded-md flex justify-around items-center border w-full h-full me-10 bg-black text-white text-2xl cursor-pointer"
                         @click="showMemberModal()">
                         <p>Add Member</p>
@@ -284,7 +290,7 @@ const selectMember = (member) => {
                     <span v-else
                         class="rounded-md flex gap-5 justify-center items-center border-2 border-black w-full h-full me-10 bg-white text-2xl cursor-pointer"
                         @click="showMemberModal()">
-                        <UserCircleIcon class="w-10 h-10"/>
+                        <UserCircleIcon class="w-10 h-10" />
                         <p class="pb-2">{{ `${selectedMember.name} (poin: ${selectedMember.points})` }}</p>
                     </span>
                     <!-- MODAL -->
@@ -293,7 +299,7 @@ const selectMember = (member) => {
                         '--from-x': '50rem',
                         '--target-x': '-3rem',
                     }" :class="{
-    'opacity-90 fixed animate-slideIn':
+    'opacity-95 fixed animate-slideIn':
         isShowingMemberModal,
     hidden: !isShowingMemberModal,
 }" class="p-5 border-2 border-black rounded-tr-2xl rounded-br-2xl bg-white top-0 w-[47rem] h-screen">
@@ -307,16 +313,40 @@ const selectMember = (member) => {
                                     <XCircleIcon class="w-12 h-12" />
                                 </span>
                             </span>
-                            <span class="w-full flex items-center justify-center">
-                                <input type="text" class="w-3/4 border border-black rounded-xl px-5" v-model="searchQuery"
-                                    @keyup="memberSearch" />
+                            <span class="w-full flex justify-center">
+                                <p class="font-semibold text-2xl">Memberbership</p>
                             </span>
-                            <div v-for="member in filteredMembers" :key="member.id"
-                                class="flex flex-row w-full justify-center items-center">
-                                <span @click="selectMember(member)" class="bg-blue-500 px-5 py-2 cursor-pointer">
-                                    {{ member.name }}
+                            <span class="w-full flex flex-col items-center justify-center">
+                                <span class="flex flex-row items-center justify-center">
+                                    <MagnifyingGlassCircleIcon class="w-8 h-8 translate-x-10 translate-y-0.5" />
+                                    <input type="text"
+                                        class="border border-black rounded-xl px-12 text-xl py-3 w-[30vw] input-with-icon"
+                                        v-model="searchQuery" @keyup="memberSearch" />
                                 </span>
-                            </div>
+                                <p class="text-center">*Guest = tanpa member</p>
+                            </span>
+                            <span class="border border-slate-500 rounded-2xl p-3">
+                                <table class="w-full table-auto">
+                                    <thead class="bg-gray-200">
+                                        <tr>
+                                            <th>No</th>
+                                            <th>Nama</th>
+                                            <th>No.Telepon</th>
+                                            <th>Poin</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr @click="selectMember(member)" class="cursor-pointer hover:bg-teal-200"
+                                            :class="{ 'border-b-2 border-gray-600': index !== (filteredMembers.length - 1) }, { 'bg-violet-400': selectedMember.name == member.name }"
+                                            v-for="(member, index) in filteredMembers" :key="member.id">
+                                            <td class="text-center py-2">{{ index + 1 }}</td>
+                                            <td class="text-center py-2">{{ member.name }}</td>
+                                            <td class="text-center py-2">{{ member.telephone }}</td>
+                                            <td class="text-center py-2">{{ member.points }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </span>
                         </div>
                     </span>
 
@@ -359,7 +389,8 @@ const selectMember = (member) => {
                                 <p class="text-xl text-center">
                                     {{ product.name }}
                                 </p>
-                                <p :class="{ 'text-red-500 font-semibold': product.stock == 0 }">Stok: {{ product.stock }}</p>
+                                <p :class="{ 'text-red-500 font-semibold': product.stock == 0 }">Stok: {{ product.stock }}
+                                </p>
                             </span>
                         </div>
                         <span class="w-full bg-orange-300 flex justify-center rounded-b-2xl py-2">

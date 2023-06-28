@@ -31,7 +31,7 @@ class TransactionController extends Controller
             DB::beginTransaction();
 
             $transaction = Transaction::create([
-                'user_id' => $request->user_id, // this id is hardcoded, referenced to the first member in table that acts as a guest (when customer has no membership) 
+                'user_id' => $request->user_id, 
                 'cashier_id' => $request->cashier_id,
                 'payment_method' => $request->payment_method,
                 'total_before_discount' => $request->total_before_discount,
